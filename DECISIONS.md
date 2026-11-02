@@ -7,3 +7,7 @@
 - Same code with the default suite: 80 JS/TS findings
 - Takeaway: path + rule suppression cut volume 84%, but volume reduction ≠ accuracy.
   Pipeline will be measured against labeled ground truth.
+
+  ## Nov 2
+- Built src/ingest.py: reads SARIF, prints 372 findings (rule, file:line, path yes/no).
+- Noticed: most volume is three.js (third-party) and data/static/codefixes (challenge snippets).

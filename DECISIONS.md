@@ -52,3 +52,5 @@ jq -r '.runs[0].results[].partialFingerprints.primaryLocationLineHash' data/raw/
 Result: **136**. Same as above, but `uniq -D` keeps every copy of each hash that appears more than once, and drops hashes that appear only once, so this counts the findings affected.
 
 Why it matters: 136 of 372 findings (about 37%) share their line hash with another finding. If the hash alone were the ID, those findings would collide, and a Day 4 label written for one would apply to the others. Adding rule_id, file, and start_column gives each finding its own ID.
+
+Day 3 result: 405 raw → 405 normalized → 0 exact duplicates. Volume reduction has to come from filters (Day 5), not dedupe.

@@ -28,6 +28,27 @@
 | message | ... | message.text | What the scanner says is wrong; needed to label |
 | has_code_flow | true | codeFlows present? | Marks findings with a source-to-sink path; starting point for reachability (Day 13) |
 
-Not in the schema (enrichment, Day 14): EPSS, KEV, owner, exposure. Why: becuase this is not the information available in SARIF file itself, the enrichment will require me to make API calls to pull all the above enrichment data and map it to each of the findings thats part of enrichment not normalization.
-ID strategy: sha256(rule_id + file + primaryLocationLineHash + start_column) choosing start column coz for cases like unused variable on var a,b,c,d; we get same hash for 4 different findings(a, b, c, d) when we only use line which is already included in "primaryLocationLineHash"  but when we use start column the hash created will different for each spot. and would not confused as the line keeps it all same. Also, the line number is left out: so the ID doesn’t change when code shifts up or down. That’s the first follow-up question an interviewer would ask.
-Exact duplicate means: same : Exact duplicate = same tool, rule_id, file, line, start_column, and message. All six are identical. Anything less is a different finding (or a grouping question for Day 5).
+Not in the schema (enrichment, Day 14): EPSS, KEV, owner, exposure.
+Why: this information isn't in the SARIF file. Enrichment needs API calls to pull it and map it to each finding, so it's part of enrichment, not normalization.
+
+ID strategy: sha256(rule_id + file + primaryLocationLineHash + start_column).
+Start column is added because findings on the same line share the same line hash (e.g., unused variables in `var a, b, c, d` give 4 findings with one hash); the column makes each spot unique. The line number is left out so the ID doesn't change when code shifts up or down.
+Evidence: 39 line hashes are shared by 136 findings, so the hash alone isn't a unique ID.
+
+Exact duplicate = same tool, rule_id, file, line, start_column, and message. All six identical. Anything less is a different finding (or a grouping question for Day 5).
+
+### Evidence: line hash alone is not a unique ID
+
+Command 1: how many line hashes repeat?
+```bash
+jq -r '.runs[0].results[].partialFingerprints.primaryLocationLineHash' data/raw/juice-shop-javascript-typescript.sarif | sort | uniq -d | wc -l
+```
+Result: **39**. Lists every finding's line hash, sorts them, keeps one copy of each hash that appears more than once (`uniq -d`), and counts them.
+
+Command 2: how many findings share a repeated hash?
+```bash
+jq -r '.runs[0].results[].partialFingerprints.primaryLocationLineHash' data/raw/juice-shop-javascript-typescript.sarif | sort | uniq -D | wc -l
+```
+Result: **136**. Same as above, but `uniq -D` keeps every copy of each hash that appears more than once, and drops hashes that appear only once, so this counts the findings affected.
+
+Why it matters: 136 of 372 findings (about 37%) share their line hash with another finding. If the hash alone were the ID, those findings would collide, and a Day 4 label written for one would apply to the others. Adding rule_id, file, and start_column gives each finding its own ID.
